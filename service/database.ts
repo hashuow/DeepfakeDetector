@@ -1,4 +1,5 @@
 import SQLite from 'react-native-sqlite-storage';
+import RNFS from 'react-native-fs';
 
 // Open/Create the database
 //Create database
@@ -39,7 +40,17 @@ export const initializeDatabase = () => {
     );
   });
 };
+export const copyDatabase = async () => {
+  const sourcePath = `/data/data/com.deepfakedetector/databases/deepfakeDetector`;
+  const destPath = `${RNFS.DownloadDirectoryPath}/deepfakeDetector.db`;
 
+  try {
+    await RNFS.copyFile(sourcePath, destPath);
+    console.log('Database copied to:', destPath);
+  } catch (error) {
+    console.error('Failed to copy database:', error);
+  }
+};
 export const getDatabase = () => db;
 
 

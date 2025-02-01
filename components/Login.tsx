@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
-import { getDatabase } from '../service/database'; 
+import { getDatabase, copyDatabase } from '../service/database'; 
 import type { SQLError } from 'react-native-sqlite-storage';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
@@ -42,8 +42,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         }
       );
     });
-  };
+    
+    copyDatabase();
 
+  }
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
