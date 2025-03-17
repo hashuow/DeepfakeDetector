@@ -6,6 +6,7 @@ import AudioGeneration from "../screens/Deepfake/AudioGeneration";
 import HomeScreen from "../screens/Home/HomeScreen";
 import LoginScreen from "../screens/Authentication/LoginScreen";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import LogoutScreen from "../screens/Authentication/Logoutscreen";
 const Drawer = createDrawerNavigator();
 
 const AppNavigator = () => {
@@ -25,6 +26,7 @@ const AppNavigator = () => {
           <Drawer.Screen name="Login" component={LoginScreen}/>
           <Drawer.Screen name="Home" component={HomeScreen} />
           <Drawer.Screen name="AudioGeneration" component={AudioGeneration} />
+          <Drawer.Screen name="Logout" component={LogoutScreen} />
         </Drawer.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
