@@ -1,38 +1,78 @@
+import { use } from "react";
 import {getDatabase} from "./database";
 
 // Insert a new user into the database
 export const insertUser = async (user) => {
-  console.log(user);
-  const database = await getDatabase(); // Ensure database is initialized
-console.log("dataabase instance, ", database)
+  console.log("🚀 Inserting user:", user);
+  const database = await getDatabase();
+  console.log("📦 Database instance:", database);
+
   return new Promise((resolve, reject) => {
     database.transaction((tx) => {
       tx.executeSql(
-        `INSERT INTO users (firstName, lastName, username, email, password, phone, createdDateTime, isActive) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+        `INSERT INTO users (firstName, lastName, username, email, password, phone) 
+         VALUES (?, ?, ?, ?, ?, ?);`,
         [
           user.firstName,
           user.lastName,
           user.username,
           user.email,
           user.password,
-          user.phone,
-          user.createdDateTime,
-          user.isActive,
+          user.phone
+          
         ],
-        (_, result) => resolve(result),
+        (_, result) => {
+          if (result.rowsAffected > 0) {
+            console.log("✅ Insert successful, Insert ID:", result.insertId);
+            resolve(result);
+          } else {
+            reject(new Error("⚠️ Insert failed. No rows affected."));
+          }
+        },
         (_, error) => {
+          console.error("❌ Insert error:", error);
           reject(new Error(error.message || "Unknown database error"));
-          return true; // tells SQLite to stop further execution
+          return true; // Stop further execution
         }
       );
     });
   });
 };
 
-// Retrieve all users
+
+export const loginUser = async (username, password) => {
+
+  await getUsers();
+  const database = await getDatabase();
+
+  return new Promise((resolve, reject) => {
+    database.transaction((tx) => {
+      tx.executeSql(
+        `SELECT * FROM users where username = ? and password = ?`,
+        [username.trim(), password.trim()],
+        (_, results) => {
+          const users = [];
+          for (let i = 0; i < results.rows.length; i++) {
+            users.push(results.rows.item(i));
+          }
+          if(users.length > 0) {
+            resolve(users[0]);
+          } else {
+            resolve(null);
+          }
+          
+        },
+        (_, error) => {
+          console.error("❌ SQL error during login:", error);
+          reject(error);
+        }
+      );
+    });
+  });
+};
+
 export const getUsers = async () => {
-  const database = await getDatabase(); // Ensure database is initialized
+  const database = await getDatabase();
 
   return new Promise((resolve, reject) => {
     database.transaction((tx) => {
@@ -40,35 +80,17 @@ export const getUsers = async () => {
         `SELECT * FROM users;`,
         [],
         (_, results) => {
-          let users = [];
+          const users = [];
           for (let i = 0; i < results.rows.length; i++) {
             users.push(results.rows.item(i));
           }
+          console.log("📋 All users:", users);
           resolve(users);
         },
-        (_, error) => reject(error)
-      );
-    });
-  });
-};
-
-
-export const loginUser = async(username, password) => {
-  const database = await getDatabase(); // Ensure database is initialized
-
-  return new Promise((resolve, reject) => {
-    database.transaction((tx) => {
-      tx.executeSql(
-        `SELECT * FROM users`, // Correct SQL query
-        [], // Pass parameters as an array
-        (_, results) => {
-          if (results.rows.length > 0) {
-            resolve(results.rows.item(0)); // Return the first user found
-          } else {
-            reject("Invalid username or password.");
-          }
-        },
-        (_, error) => reject(error)
+        (_, error) => {
+          console.error("❌ Error fetching users:", error);
+          reject(error);
+        }
       );
     });
   });

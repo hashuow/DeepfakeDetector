@@ -36,8 +36,10 @@ const RegisterScreen = ({ navigation }) => {
       userDetails.username,
       userDetails.email,
       userDetails.password,
-      parseInt(userDetails.phone, 10) // Convert phone to integer
+      parseInt(userDetails.phone, 10)
+      
     );
+
 
     try {
       await insertUser(newUser);
@@ -50,7 +52,13 @@ const RegisterScreen = ({ navigation }) => {
         password: "",
         phone: "",
       });
-      navigation.goBack(); // Redirect to login screen
+
+      // ✅ Corrected navigation
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate("Login");
+      }
     } catch (error) {
       Alert.alert("Error", "User registration failed. Email or phone may already exist.");
       console.error("Error inserting user:", error);
@@ -119,13 +127,13 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "bold", marginBottom: 10 },
   input: { borderWidth: 1, padding: 10, marginVertical: 5, borderRadius: 5 },
   buttonContainer: {
-    flexDirection: "row", // Buttons side-by-side
-    justifyContent: "space-between", // Space between buttons
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 10,
   },
   button: {
-    flex: 1, // Each button takes equal space
-    marginHorizontal: 5, // Add space between buttons
+    flex: 1,
+    marginHorizontal: 5,
   },
 });
 

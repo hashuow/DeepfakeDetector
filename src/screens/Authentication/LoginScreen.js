@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import { loginUser } from "../../database/queries"; // Import login function
 
@@ -14,9 +14,13 @@ const LoginScreen = ({ navigation }) => {
 
     try {
       const user = await loginUser(username, password);
-      Alert.alert("Success", `Welcome, ${user.firstName}!`);
-      navigation.replace("Home"); // Redirect to Home after successful login
+      if(user != null) {
+        console.log("Retunrd user object", user)
+        navigation.navigate("Home", {user});// Redirect to Home after successful login
+      }
+      
     } catch (error) {
+      console.log(error)
       Alert.alert("Login Failed", "Invalid credentials!");
     }
   };

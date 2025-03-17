@@ -1,10 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-const HomeScreen = () => {
+const HomeScreen = ({ route }) => {
+
+  const { user } = route.params;
+  console.log("from home screen ", user)
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Home Screen!</Text>
+      <Text style={styles.title}>Welcome to Home Screen, {user.lastName}!</Text>
     </View>
   );
 };
