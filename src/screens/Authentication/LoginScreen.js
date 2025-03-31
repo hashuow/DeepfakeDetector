@@ -16,7 +16,7 @@ const LoginScreen = ({ navigation }) => {
       const user = await loginUser(username, password);
       if(user != null) {
         console.log("Retunrd user object", user)
-        navigation.navigate("Home", {user});// Redirect to Home after successful login
+        navigation.navigate("Dashboard", {user});// Redirect to Home after successful login
       }
       
     } catch (error) {
