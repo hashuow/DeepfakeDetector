@@ -3,6 +3,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
 import RegisterScreen from "../screens/Authentication/RegisterScreen";
 import AudioGeneration from "../screens/Deepfake/AudioGeneration";
+import AudioCheckerScreen from "../screens/Deepfake/AudioCheckerScreen.js";
 import HomeScreen from "../screens/Home/HomeScreen";
 import LoginScreen from "../screens/Authentication/LoginScreen";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -25,6 +26,7 @@ const AppNavigator = () => {
           <Drawer.Screen name="Login" component={LoginScreen}/>
           <Drawer.Screen name="Home" component={HomeScreen} />
           <Drawer.Screen name="AudioGeneration" component={AudioGeneration} />
+          <Drawer.Screen name="AudioCheckerScreen" component={AudioCheckerScreen} />
         </Drawer.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
