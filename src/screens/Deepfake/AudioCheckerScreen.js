@@ -9,24 +9,37 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Sound from "react-native-sound";
+import RNFS from "react-native-fs";
+
 
 Sound.setCategory("Playback");
 
 // Preload sound files from res/raw folder using require
-const audioFiles = {
-  "voice1.mp3": require("../../../android/app/src/main/res/raw/voice1.mp3"),
-  "df1.mp3": require("../../../android/app/src/main/res/raw/df1.mp3"),
-  "df2.mp3": require("../../../android/app/src/main/res/raw/df2.mp3"),
-  "alarm.mp3": require("../../../android/app/src/main/res/raw/alarm.mp3"),
-};
+// const audioFiles = {
+//   "voice1.mp3": require("../../../android/app/src/main/res/raw/voice1.mp3"),
+//   "df1.mp3": require("../../../android/app/src/main/res/raw/df1.mp3"),
+//   "df2.mp3": require("../../../android/app/src/main/res/raw/df2.mp3"),
+//   "hashvoice1.mp3": require("../../../android/app/src/main/res/raw/hashvoice1.mp3"),
+//   "alarm.mp3": require("../../../android/app/src/main/res/raw/alarm.mp3"),
+// };
+// const audioFiles = {
+// //   "voice1.mp3": require("../../../android/app/src/main/res/raw/voice1.mp3"),
+// //   "df1.mp3": require("../../../android/app/src/main/res/raw/df1.mp3"),
+// //   "df2.mp3": require("../../../android/app/src/main/res/raw/df2.mp3"),
+// //   "hashvoice1.mp3": require("../../../android/app/src/main/res/raw/hashvoice1.mp3"),
+//   "alarm.mp3": require("../../../android/app/src/main/res/raw/alarm.mp3"),
+// };
+
+const audioFiles = ["voice1.mp3", "df1.mp3", "df2.mp3", "realvoice1.flac"];
+
 
 const AudioCheckerScreen = () => {
   const [selectedAudio, setSelectedAudio] = useState("voice1.mp3");
   const [isCalling, setIsCalling] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const playAudio = (fileKey) => {
-    const sound = new Sound(audioFiles[fileKey], (error) => {
+  const playAudio = () => {
+    const sound = new Sound('alarm', Sound.MAIN_BUNDLE, (error) => {
       if (error) {
         console.error("Failed to load sound", error);
         Alert.alert("Error", "Failed to load sound: " + error.message);
@@ -48,8 +61,40 @@ const AudioCheckerScreen = () => {
     setLoading(true);
 
     try {
-      // Simulated API response (replace with real fetch call if needed)
-      const data = { real: false }; // change to true to test other branch
+
+      console.log(selectedAudio)
+
+      const filePath = `${RNFS.DocumentDirectoryPath}/${selectedAudio}`;
+
+    // Step 2: Copy from raw assets if not already copied
+    const exists = await RNFS.exists(filePath);
+    console.log("exists----",exists)
+    if (!exists) {
+      console.log("copying file --",exists)
+      await RNFS.copyFileAssets(selectedAudio, filePath);
+      console.log("Copied to:", filePath);
+    }
+
+    // Step 3: Prepare the file upload
+    const formData = new FormData();
+    formData.append("audio", {
+      uri: "file://" + filePath,
+      type: "audio/mpeg",
+      name: selectedAudio,
+    });
+
+    // Step 4: Make the HTTP POST request
+    const response = await fetch("http://10.0.2.2:8000/predict/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Accept: "application/json",
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log("Server response:", data);
 
       setLoading(false);
 
@@ -76,9 +121,7 @@ const AudioCheckerScreen = () => {
         onValueChange={(itemValue) => setSelectedAudio(itemValue)}
         style={styles.picker}
       >
-        {Object.keys(audioFiles)
-          .filter((f) => f !== "alarm.mp3")
-          .map((file) => (
+        {audioFiles.map((file) => (
             <Picker.Item key={file} label={file} value={file} />
           ))}
       </Picker>
