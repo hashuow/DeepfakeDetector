@@ -14,22 +14,6 @@ import RNFS from "react-native-fs";
 
 Sound.setCategory("Playback");
 
-// Preload sound files from res/raw folder using require
-// const audioFiles = {
-//   "voice1.mp3": require("../../../android/app/src/main/res/raw/voice1.mp3"),
-//   "df1.mp3": require("../../../android/app/src/main/res/raw/df1.mp3"),
-//   "df2.mp3": require("../../../android/app/src/main/res/raw/df2.mp3"),
-//   "hashvoice1.mp3": require("../../../android/app/src/main/res/raw/hashvoice1.mp3"),
-//   "alarm.mp3": require("../../../android/app/src/main/res/raw/alarm.mp3"),
-// };
-// const audioFiles = {
-// //   "voice1.mp3": require("../../../android/app/src/main/res/raw/voice1.mp3"),
-// //   "df1.mp3": require("../../../android/app/src/main/res/raw/df1.mp3"),
-// //   "df2.mp3": require("../../../android/app/src/main/res/raw/df2.mp3"),
-// //   "hashvoice1.mp3": require("../../../android/app/src/main/res/raw/hashvoice1.mp3"),
-//   "alarm.mp3": require("../../../android/app/src/main/res/raw/alarm.mp3"),
-// };
-
 const audioFiles = ["voice1.mp3", "df1.mp3", "df2.mp3", "realvoice1.flac"];
 
 
