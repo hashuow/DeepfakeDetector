@@ -21,7 +21,7 @@ export const createTables = async () => {
         username TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        phone INTEGER UNIQUE NOT NULL,
+        phone TEXT UNIQUE NOT NULL,
         createdDateTime DATETIME DEFAULT CURRENT_TIMESTAMP,
         isActive INTEGER NOT NULL DEFAULT 1
       );`,

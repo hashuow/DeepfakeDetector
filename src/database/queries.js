@@ -3,9 +3,9 @@ import {getDatabase} from "./database";
 
 // Insert a new user into the database
 export const insertUser = async (user) => {
-  console.log("🚀 Inserting user:", user);
+  console.log("Inserting user:", user);
   const database = await getDatabase();
-  console.log("📦 Database instance:", database);
+  console.log("Database instance:", database);
 
   return new Promise((resolve, reject) => {
     database.transaction((tx) => {
@@ -40,27 +40,50 @@ export const insertUser = async (user) => {
 };
 
 
-export const loginUser = async (username, password) => {
+// export const loginUser = async (username, password) => {
 
-  await getUsers();
+//   await getUsers();
+//   const database = await getDatabase();
+
+//   return new Promise((resolve, reject) => {
+//     database.transaction((tx) => {
+//       tx.executeSql(
+//         `SELECT * FROM users where username = ? and password = ?`,
+//         [username.trim(), password.trim()],
+//         (_, results) => {
+//           const users = [];
+//           for (let i = 0; i < results.rows.length; i++) {
+//             users.push(results.rows.item(i));
+//           }
+//           if(users.length > 0) {
+//             resolve(users[0]);
+//           } else {
+//             resolve(null);
+//           }
+//         },
+//         (_, error) => {
+//           console.error("❌ SQL error during login:", error);
+//           reject(error);
+//         }
+//       );
+//     });
+//   });
+// };
+
+export const loginUser = async (username) => {
   const database = await getDatabase();
 
   return new Promise((resolve, reject) => {
     database.transaction((tx) => {
       tx.executeSql(
-        `SELECT * FROM users where username = ? and password = ?`,
-        [username.trim(), password.trim()],
+        `SELECT * FROM users WHERE username = ?;`,
+        [username.trim()],
         (_, results) => {
-          const users = [];
-          for (let i = 0; i < results.rows.length; i++) {
-            users.push(results.rows.item(i));
-          }
-          if(users.length > 0) {
-            resolve(users[0]);
+          if (results.rows.length > 0) {
+            resolve(results.rows.item(0)); // Return the user record (includes hashed password)
           } else {
-            resolve(null);
+            resolve(null); // User not found
           }
-          
         },
         (_, error) => {
           console.error("❌ SQL error during login:", error);
@@ -70,6 +93,7 @@ export const loginUser = async (username, password) => {
     });
   });
 };
+
 
 export const getUsers = async () => {
   const database = await getDatabase();

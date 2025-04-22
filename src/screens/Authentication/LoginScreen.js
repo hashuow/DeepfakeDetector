@@ -1,6 +1,7 @@
 import React, { use, useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import { loginUser } from "../../database/queries"; // Import login function
+import bcrypt from 'react-native-bcrypt';
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -13,12 +14,13 @@ const LoginScreen = ({ navigation }) => {
     }
 
     try {
-      const user = await loginUser(username, password);
-      if(user != null) {
-        console.log("Retunrd user object", user)
+      const user = await loginUser(username);
+      console.log(password);
+      console.log(user.password);
+      if(user && bcrypt.compareSync(password, user.password)) {
+        console.log("Returned user object", user)
         navigation.navigate("Home", {user}); // Redirecting to Home after successful login
       }
-      
     } catch (error) {
       console.log(error)
       Alert.alert("Login Failed", "Invalid credentials!");
