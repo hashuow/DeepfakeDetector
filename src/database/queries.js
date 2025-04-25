@@ -95,3 +95,47 @@ export const getUsers = async () => {
     });
   });
 };
+
+export const insertAudioFile = async (filename, filepath) => {
+  const db = await getDatabase();
+
+  return new Promise((resolve, reject) => {
+    db.transaction((tx) => {
+      tx.executeSql(
+        `INSERT INTO audio_files (filename, filepath) VALUES (?, ?);`,
+        [filename, filepath],
+        (_, result) => {
+          console.log("✅ Audio inserted with ID:", result.insertId);
+          resolve(result.insertId);
+        },
+        (_, error) => {
+          console.error("❌ Insert audio failed:", error);
+          reject(error);
+        }
+      );
+    });
+  });
+};
+export const getAllAudioFiles = async () => {
+  const db = await getDatabase();
+
+  return new Promise((resolve, reject) => {
+    db.transaction((tx) => {
+      tx.executeSql(
+        `SELECT * FROM audio_files ORDER BY insertTime DESC;`,
+        [],
+        (_, results) => {
+          const audioFiles = [];
+          for (let i = 0; i < results.rows.length; i++) {
+            audioFiles.push(results.rows.item(i));
+          }
+          resolve(audioFiles);
+        },
+        (_, error) => {
+          console.error("❌ Fetch audio files failed:", error);
+          reject(error);
+        }
+      );
+    });
+  });
+};

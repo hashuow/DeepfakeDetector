@@ -29,5 +29,17 @@ export const createTables = async () => {
       () => console.log(" Users table created successfully!"),
       (error) => console.error("Error creating Users table:", error)
     );
+    tx.executeSql(
+      `CREATE TABLE IF NOT EXISTS audio_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT NOT NULL,
+        filepath TEXT NOT NULL,
+        insertTime DATETIME DEFAULT CURRENT_TIMESTAMP
+      );`,
+      [],
+      () => console.log("audio_files table created."),
+      (error) => console.error("Error creating audio_files table:", error)
+    );
+    
   });
 };
