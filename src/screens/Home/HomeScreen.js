@@ -1,33 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { getFirestore, collection, query, where, orderBy, getDocs } from '@react-native-firebase/firestore';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
+import { getFirestore, collection, query, where, getDocs } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
-import Sound from 'react-native-sound';
 import moment from 'moment';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // 🔥 New import
-
-Sound.setCategory('Playback');
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Video from 'react-native-video';
 
 const HomeScreen = () => {
   const [audioList, setAudioList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [playingAudio, setPlayingAudio] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentAudioUrl, setCurrentAudioUrl] = useState(null);
+  const [paused, setPaused] = useState(true);
 
   useEffect(() => {
     fetchAudioFiles();
   }, []);
 
-  const fetchAudioFiles = async () => {
-    const userId = 'hash'; // Hardcoded userId
+  const fetchAudioFiles = async (isRefresh = false) => {
+    const userId = 'hash'; // 🔥 Your user ID
+
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
 
     try {
-      console.log('Trying to fetch audio files for user:', userId);
+      console.log('Fetching audio files for user:', userId);
 
       const db = getFirestore(getApp());
       const audioQuery = query(
         collection(db, 'audio_files'),
         where('userId', '==', userId),
-        // orderBy('uploadedAt', 'desc')
       );
 
       const snapshot = await getDocs(audioQuery);
@@ -43,43 +48,30 @@ const HomeScreen = () => {
     } catch (error) {
       console.error('Error fetching audio files:', error.message);
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
-  const playAudio = (audioUrl) => {
-    if (playingAudio) {
-      playingAudio.stop(() => {
-        playingAudio.release();
-      });
+  const handlePlayPause = (audioUrl) => {
+    if (currentAudioUrl === audioUrl) {
+      setPaused(!paused); // toggle pause/play
+    } else {
+      setCurrentAudioUrl(audioUrl);
+      setPaused(false); // play new audio
     }
-
-    const sound = new Sound(audioUrl, null, (error) => {
-      if (error) {
-        console.error('Failed to load the sound', error);
-        return;
-      }
-      sound.play((success) => {
-        if (success) {
-          console.log('Successfully finished playing');
-        } else {
-          console.error('Playback failed due to audio decoding errors');
-        }
-        sound.release();
-        setPlayingAudio(null);
-      });
-    });
-
-    setPlayingAudio(sound);
   };
 
   const getStatusIcon = (status) => {
     if (status === 'real') {
-      return <Icon name="shield-check" size={24} color="green" />; // ✅ real
+      return <Icon name="shield-check" size={24} color="green" />;
     } else if (status === 'fake') {
-      return <Icon name="alert-circle" size={24} color="red" />; // ⚠️ fake
+      return <Icon name="alert-circle" size={24} color="red" />;
     } else {
-      return <Icon name="help-circle" size={24} color="gray" />; // ❔ unknown
+      return <Icon name="help-circle" size={24} color="gray" />;
     }
   };
 
@@ -100,31 +92,60 @@ const HomeScreen = () => {
         <Text>No audio files found for this user.</Text>
       ) : (
         <FlatList
-  data={audioList}
-  keyExtractor={(item) => item.id}
-  refreshing={loading}         // ✅ Show spinner when refreshing
-  onRefresh={fetchAudioFiles}  // ✅ Trigger fetching new data
-  renderItem={({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardContent}>
-        <Text style={styles.fileName}>{item.fileName}</Text>
-        <View style={styles.statusRow}>
-          {getStatusIcon(item.status)}
-          <Text style={styles.statusText}> {item.status}</Text>
-        </View>
-        <Text style={styles.detail}>Location: {item.location || 'Unknown'}</Text>
-        <Text style={styles.detail}>
-          Uploaded: {item.uploadedAt?.seconds ? moment(item.uploadedAt.seconds * 1000).format('DD MMM YYYY, hh:mm A') : 'N/A'}
-        </Text>
-      </View>
-      <TouchableOpacity style={styles.playButton} onPress={() => playAudio(item.fileUrl)}>
-        <Text style={styles.playButtonText}>Play</Text>
-      </TouchableOpacity>
-    </View>
-  )}
-  ItemSeparatorComponent={() => <View style={styles.separator} />}
-/>
+          data={audioList}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchAudioFiles(true)}
+              colors={['#4CAF50']}
+            />
+          }
+          renderItem={({ item }) => {
+            const isPlaying = item.fileUrl === currentAudioUrl && !paused;
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardContent}>
+                  <Text style={styles.fileName}>{item.fileName}</Text>
+                  <View style={styles.statusRow}>
+                    {getStatusIcon(item.status)}
+                    <Text style={styles.statusText}> {item.status}</Text>
+                  </View>
+                  <Text style={styles.detail}>Location: {item.location || 'Unknown'}</Text>
+                  <Text style={styles.detail}>
+                    Uploaded: {item.uploadedAt?.seconds
+                      ? moment(item.uploadedAt.seconds * 1000).format('DD MMM YYYY, hh:mm A')
+                      : 'N/A'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.playButton, { backgroundColor: isPlaying ? '#f44336' : '#4CAF50' }]}
+                  onPress={() => handlePlayPause(item.fileUrl)}
+                >
+                  <Text style={styles.playButtonText}>
+                    {isPlaying ? 'Pause' : 'Play'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          }}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
+      )}
 
+      {/* 🔥 Audio Player */}
+      {currentAudioUrl && (
+        <Video
+          source={{ uri: currentAudioUrl }}
+          paused={paused}
+          audioOnly={true}
+          onEnd={() => {
+            setCurrentAudioUrl(null);
+            setPaused(true);
+          }}
+          onError={(e) => console.error('Audio playback error:', e)}
+          style={{ height: 0, width: 0 }}
+        />
       )}
     </View>
   );
@@ -140,7 +161,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   centered: {
-    flex:1,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -185,7 +206,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   playButton: {
-    backgroundColor: '#4CAF50',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
