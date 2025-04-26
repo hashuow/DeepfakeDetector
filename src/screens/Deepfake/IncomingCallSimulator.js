@@ -11,6 +11,8 @@ import { Picker } from "@react-native-picker/picker";
 import Sound from "react-native-sound";
 import RNFS from "react-native-fs";
 import { getAllAudioFiles } from "../../database/queries"; // Adjust path if needed
+import { useNavigation } from '@react-navigation/native';
+
 
 Sound.setCategory("Playback");
 
@@ -20,7 +22,10 @@ const IncomingCallSimulator = () => {
   const [isCalling, setIsCalling] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const navigation = useNavigation();
+
   useEffect(() => {
+    
     const fetchAudioFiles = async () => {
       try {
         const files = await getAllAudioFiles();
@@ -124,7 +129,16 @@ const IncomingCallSimulator = () => {
         </Picker>
       )}
 
-      <Button title="Simulate Incoming Call" onPress={simulateCall} disabled={!selectedAudio} />
+      <Button
+        title="Start Call"
+        onPress={() =>
+          navigation.navigate('PhoneCallScreen', {
+            audioPath: `${RNFS.DocumentDirectoryPath}/${selectedAudio}`,
+          })
+        }
+      />
+
+      {/* <Button title="Simulate Incoming Call" onPress={simulateCall} disabled={!selectedAudio} /> */}
 
       {loading && <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 20 }} />}
 
