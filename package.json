@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-native-firebase/app": "^22.0.0",
     "@react-native-firebase/firestore": "^22.0.0",
+    "@react-native-firebase/messaging": "^22.0.0",
     "@react-native-picker/picker": "^2.11.0",
     "@react-navigation/drawer": "^7.1.2",
     "@react-navigation/native": "^7.0.15",
