@@ -23,14 +23,13 @@ export const insertUser = async (user) => {
   }
 };
 
-export const loginUser = async (username, password) => {
+export const loginUser = async (username) => {
   try {
     const db = getFirestore(getApp());
     
     const userQuery = query(
       collection(db, "users"),
-      where("username", "==", username),
-      where("password", "==", password)
+      where("username", "==", username)
     );
 
     const querySnapshot = await getDocs(userQuery);

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import User from "../../model/User"; // Import User model
 import { insertUser } from "../../database/firestoreDB"; // Import DB query function
+import bcrypt from 'react-native-bcrypt';
 
 const RegisterScreen = ({ navigation }) => {
   const [userDetails, setUserDetails] = useState({
@@ -30,12 +31,16 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
+    // Hashing password via bcrypt.js
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(userDetails.password, salt);
+
     const newUser = new User(
       userDetails.firstName,
       userDetails.lastName,
       userDetails.username,
       userDetails.email,
-      userDetails.password,
+      hashedPassword,
       parseInt(userDetails.phone, 10)
       
     );

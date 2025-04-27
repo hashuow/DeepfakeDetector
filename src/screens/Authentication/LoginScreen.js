@@ -1,6 +1,7 @@
 import React, { use, useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-import { loginUser } from "../../database/firestoreDB"; // Import login function
+import { loginUser } from "../../database/firestoreDB"; 
+import bcrypt from 'react-native-bcrypt';
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -15,9 +16,8 @@ const LoginScreen = ({ navigation }) => {
     }
   
     try {
-      const user = await loginUser(username, password);
-      if(user != null) {
-        console.log("Logged in user:", user);
+      const user = await loginUser(username);
+      if(user && bcrypt.compareSync(password, user.password)) {
         Alert.alert("Logged In successfully..");
         navigation.navigate("Home", { user });
       }
