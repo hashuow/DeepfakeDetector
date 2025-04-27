@@ -1,6 +1,6 @@
 import React, { use, useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-import { loginUser } from "../../database/queries"; // Import login function
+import { loginUser } from "../../database/firestoreDB"; // Import login function
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -8,22 +8,30 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert("Error", "Please enter both email and password!");
+     
+        Alert.alert("Error", "Please enter both username and password!");
+      
       return;
     }
-
+  
     try {
       const user = await loginUser(username, password);
       if(user != null) {
-        console.log("Retunrd user object", user)
-        navigation.navigate("Home", {user});// Redirect to Home after successful login
+        console.log("Logged in user:", user);
+        Alert.alert("Logged In successfully..");
+        navigation.navigate("Home", { user });
       }
-      
+      else {
+        Alert.alert("Login Failed", "Invalid credentials!");
+      }
     } catch (error) {
-      console.log(error)
-      Alert.alert("Login Failed", "Invalid credentials!");
+      console.error("Login error:", error);
+      if (isFocused) {
+        Alert.alert("Login Failed", error.message || "Invalid credentials!");
+      }
     }
   };
+  
 
   return (
     <View style={styles.container}>

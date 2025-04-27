@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import User from "../../model/User"; // Import User model
-import { insertUser } from "../../database/queries"; // Import DB query function
+import { insertUser } from "../../database/firestoreDB"; // Import DB query function
 
 const RegisterScreen = ({ navigation }) => {
   const [userDetails, setUserDetails] = useState({
