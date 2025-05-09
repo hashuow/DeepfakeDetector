@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "722256569420",
+    "project_id": "deefake-20283",
+    "storage_bucket": "deefake-20283.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:722256569420:android:f20c4e4bd014010f7a40e9",
+        "android_client_info": {
+          "package_name": "com.deepfakemobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAw_Znz2GWGlXEEETmph98GN9fSwG7YdHk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

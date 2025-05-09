@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
-import { getFirestore, collection, query, where, getDocs } from '@react-native-firebase/firestore';
+import { getFirestore, collection, getDocs } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import moment from 'moment';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -18,8 +18,6 @@ const HomeScreen = () => {
   }, []);
 
   const fetchAudioFiles = async (isRefresh = false) => {
-    const userId = 'hash'; // 🔥 Your user ID
-
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -27,51 +25,34 @@ const HomeScreen = () => {
     }
 
     try {
-      console.log('Fetching audio files for user:', userId);
-
       const db = getFirestore(getApp());
-      const audioQuery = query(
-        collection(db, 'audio_files'),
-        where('userId', '==', userId),
-      );
-
+      const audioQuery = collection(db, 'voice_recordings');
       const snapshot = await getDocs(audioQuery);
 
-      console.log('Fetched docs:', snapshot.size);
-
-      const list = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const list = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          from: data.from,
+          recordingUrl: data.recordingUrl,
+          timestamp: data.timestamp,
+        };
+      });
 
       setAudioList(list);
     } catch (error) {
       console.error('Error fetching audio files:', error.message);
     } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
-      }
+      isRefresh ? setRefreshing(false) : setLoading(false);
     }
   };
 
   const handlePlayPause = (audioUrl) => {
     if (currentAudioUrl === audioUrl) {
-      setPaused(!paused); // toggle pause/play
+      setPaused(!paused);
     } else {
       setCurrentAudioUrl(audioUrl);
-      setPaused(false); // play new audio
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    if (status === 'real') {
-      return <Icon name="shield-check" size={24} color="green" />;
-    } else if (status === 'fake') {
-      return <Icon name="alert-circle" size={24} color="red" />;
-    } else {
-      return <Icon name="help-circle" size={24} color="gray" />;
+      setPaused(false);
     }
   };
 
@@ -86,10 +67,10 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your Uploaded Audio Files</Text>
+      <Text style={styles.title}>Incoming Voice Recordings</Text>
 
       {audioList.length === 0 ? (
-        <Text>No audio files found for this user.</Text>
+        <Text>No audio recordings found.</Text>
       ) : (
         <FlatList
           data={audioList}
@@ -102,25 +83,20 @@ const HomeScreen = () => {
             />
           }
           renderItem={({ item }) => {
-            const isPlaying = item.fileUrl === currentAudioUrl && !paused;
+            const isPlaying = item.recordingUrl === currentAudioUrl && !paused;
             return (
               <View style={styles.card}>
                 <View style={styles.cardContent}>
-                  <Text style={styles.fileName}>{item.fileName}</Text>
-                  <View style={styles.statusRow}>
-                    {getStatusIcon(item.status)}
-                    <Text style={styles.statusText}> {item.status}</Text>
-                  </View>
-                  <Text style={styles.detail}>Location: {item.location || 'Unknown'}</Text>
+                  <Text style={styles.fileName}>From: {item.from}</Text>
                   <Text style={styles.detail}>
-                    Uploaded: {item.uploadedAt?.seconds
-                      ? moment(item.uploadedAt.seconds * 1000).format('DD MMM YYYY, hh:mm A')
-                      : 'N/A'}
+                    Received: {item.timestamp
+                      ? moment(item.timestamp).format('DD MMM YYYY, hh:mm A')
+                      : 'Unknown'}
                   </Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.playButton, { backgroundColor: isPlaying ? '#f44336' : '#4CAF50' }]}
-                  onPress={() => handlePlayPause(item.fileUrl)}
+                  onPress={() => handlePlayPause(item.recordingUrl)}
                 >
                   <Text style={styles.playButtonText}>
                     {isPlaying ? 'Pause' : 'Play'}
@@ -133,7 +109,6 @@ const HomeScreen = () => {
         />
       )}
 
-      {/* 🔥 Audio Player */}
       {currentAudioUrl && (
         <Video
           source={{ uri: currentAudioUrl }}
@@ -153,7 +128,6 @@ const HomeScreen = () => {
 
 export default HomeScreen;
 
-// 🛠 Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -176,29 +150,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     borderRadius: 12,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
     alignItems: 'center',
   },
   cardContent: {
     flex: 1,
   },
   fileName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statusText: {
-    fontSize: 14,
-    marginLeft: 6,
-    color: '#444',
   },
   detail: {
     fontSize: 14,

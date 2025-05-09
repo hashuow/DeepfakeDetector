@@ -1,29 +1,53 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, AppState } from "react-native";
+import messaging from "@react-native-firebase/messaging";
 import AppNavigator from "./src/navigation/AppNavigator";
-// import { createTables } from "./src/database/schema";
-import messaging from '@react-native-firebase/messaging';
-import { Alert } from 'react-native';
-import Sound from 'react-native-sound';
+import Sound from "react-native-sound";
+import RNFS from "react-native-fs";
+import StreamPlayer from "./src/screens/Home/StreamPlayer";
+
+const WS_URL = 'wss://6d97-2001-4479-407-a200-4b7-9d4a-b0cf-6e73.ngrok-free.app';
 
 const App = () => {
-  
+  const ws = useRef<WebSocket | null>(null);
+  const [connected, setConnected] = useState(false);
+  const currentAudio = useRef<Sound | null>(null);
+  const alarmSound = useRef<Sound | null>(null);
+  const fcmUnsubscribe = useRef<(() => void) | undefined>(undefined);
+
+  // Stream state
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [caller, setCaller] = useState<string>(''); // For "from" number/name
+
   useEffect(() => {
-    let unsubscribeFCM: (() => void) | null | undefined = undefined; // ✅ Correct typing
-  
-    const initializeApp = async () => {
-     // await createTables();
-      unsubscribeFCM = await setupFCM(); // could be undefined
-    };
-  
-    initializeApp();
-  
-    return () => {
-      if (unsubscribeFCM) {
-        unsubscribeFCM(); // call unsubscribe safely
+    Sound.setCategory("Playback");
+
+    // Load alarm sound
+    alarmSound.current = new Sound("alarm", Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.error("Failed to load alarm sound", error);
+      } else {
+        console.log("✅ Alarm sound loaded");
       }
+    });
+
+    // FCM Setup
+    setupFCM();
+
+    // WebSocket setup
+    connectWebSocket();
+
+    const appStateListener = AppState.addEventListener("change", (state) => {
+      if (state === "active" && !connected) connectWebSocket();
+    });
+
+    return () => {
+      ws.current?.close();
+      fcmUnsubscribe.current?.();
+      currentAudio.current?.release();
+      appStateListener.remove();
     };
   }, []);
-  
 
   const setupFCM = async () => {
     try {
@@ -31,57 +55,124 @@ const App = () => {
       const enabled =
         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
         authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-  
-      if (enabled) {
-        console.log('Notification permission granted.');
-  
-        const token = await messaging().getToken();
-        console.log('FCM Token:', token);
-      } else {
-        console.log(' Notification permission denied.');
-      }
 
-      // ✅ Prepare alarm sound
-      Sound.setCategory('Playback'); // Important for Android/iOS
-      const alarmSound = new Sound('alarm', Sound.MAIN_BUNDLE, (error) => {
-        if (error) {
-          console.error('Failed to load alarm sound', error);
-        } else {
-          console.log('Alarm sound loaded');
-        }
-      });
-  
-      const unsubscribe = messaging().onMessage(async remoteMessage => {
-        console.log('New FCM Message:', remoteMessage);
-      
-        if (remoteMessage?.notification?.title === "Fake Voice Detected!") {
-          if (alarmSound) {
-            alarmSound.play((success) => {
-              if (success) {
-                console.log('Alarm sound played successfully');
-              } else {
-                console.error('Failed to play alarm sound');
-              }
+      if (enabled) {
+        const token = await messaging().getToken();
+        console.log("FCM Token:", token);
+
+        fcmUnsubscribe.current = messaging().onMessage(async (remoteMessage) => {
+          console.log("🔥 FCM Message:", remoteMessage);
+
+          if (remoteMessage.notification?.title === "Fake Voice Detected!") {
+            alarmSound.current?.play((success) => {
+              if (!success) console.error("🔇 Alarm playback failed");
             });
           }
-        }
-      
-        Alert.alert(
-          remoteMessage.notification?.title || 'Alert',
-          remoteMessage.notification?.body || 'You have a new message.'
-        );
-      });
-      
-  
-      return unsubscribe;
+
+          Alert.alert(
+            remoteMessage.notification?.title || "Alert",
+            remoteMessage.notification?.body || "You have a new message."
+          );
+        });
+      } else {
+        console.log("❌ Notification permission denied.");
+      }
     } catch (error) {
-      const err = error as Error;
-      console.error('Error setting up FCM:', err.message);
+      console.error("⚠️ FCM setup error:", error);
     }
   };
-  
 
-  return <AppNavigator />;
+  const connectWebSocket = () => {
+    ws.current = new WebSocket(WS_URL);
+
+    ws.current.onopen = () => {
+      console.log("✅ WebSocket connected");
+      setConnected(true);
+      ws.current?.send(JSON.stringify({ type: "client" }));
+    };
+
+    ws.current.onmessage = async (event) => {
+      const message = JSON.parse(event.data);
+
+      if (message.type === "incoming_call") {
+        console.log("📞 Incoming Call:", message.from);
+        Alert.alert("📞 Incoming Call", `From: ${message.from}`);
+      }
+
+      if (message.type === "audio") {
+        console.log("🎧 Audio received");
+        await playBase64Audio(message.payload);
+      }
+
+      if (message.type === "recording") {
+        console.log("🎙️ Received recording URL:", message.url);
+        setRecordingUrl(message.url);
+        setCaller(message.from || 'Unknown'); // Show caller name/number
+      }
+
+      if (message.type === "end_stream") {
+        stopAudioPlayback();
+      }
+    };
+
+    ws.current.onerror = (e) => {
+      console.error("❌ WebSocket error:", e.message);
+    };
+
+    ws.current.onclose = () => {
+      console.warn("🔌 WebSocket disconnected");
+      setConnected(false);
+      setTimeout(connectWebSocket, 3000);
+    };
+  };
+
+  const playBase64Audio = async (base64: string) => {
+    try {
+      const path = `${RNFS.DocumentDirectoryPath}/audio_${Date.now()}.mp3`;
+      await RNFS.writeFile(path, base64, "base64");
+
+      const sound = new Sound(path, "", (error) => {
+        if (error) {
+          console.error("Error loading audio", error);
+          return;
+        }
+        sound.play((success) => {
+          if (!success) console.error("Error playing audio");
+          sound.release();
+        });
+        currentAudio.current = sound;
+      });
+    } catch (error) {
+      console.error("Error playing base64 audio:", error);
+    }
+  };
+
+  const stopAudioPlayback = () => {
+    if (currentAudio.current) {
+      currentAudio.current.stop(() => {
+        currentAudio.current?.release();
+        currentAudio.current = null;
+      });
+    }
+  };
+
+  return (
+    <>
+      <AppNavigator />
+
+      {/* Full-screen incoming call UI when recordingUrl is received */}
+      {recordingUrl && (
+        <StreamPlayer
+          recordingUrl={recordingUrl}
+          from={caller}
+          onEnd={() => {
+            setRecordingUrl(null);
+            setCaller('');
+          }}
+        />
+      )}
+    </>
+  );
 };
 
 export default App;

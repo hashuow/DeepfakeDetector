@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "722256569420",
-    "project_id": "deefake-20283",
-    "storage_bucket": "deefake-20283.firebasestorage.app"
+    "project_number": "564951037150",
+    "project_id": "twilio-voice-39da2",
+    "storage_bucket": "twilio-voice-39da2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:722256569420:android:f20c4e4bd014010f7a40e9",
+        "mobilesdk_app_id": "1:564951037150:android:87bc5f38d5f7a33af73e4f",
         "android_client_info": {
           "package_name": "com.deepfakemobile"
         }
@@ -15,7 +15,45 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAw_Znz2GWGlXEEETmph98GN9fSwG7YdHk"
+          "current_key": "AIzaSyCvo58luR18jYgZP_cdXygXXYpnU2SOjls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564951037150:android:37d520b172135a85f73e4f",
+        "android_client_info": {
+          "package_name": "com.twilio.voice.quickstart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvo58luR18jYgZP_cdXygXXYpnU2SOjls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564951037150:android:dd23148cf0dd1d26f73e4f",
+        "android_client_info": {
+          "package_name": "com.twiliovoicereactnativereferenceapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvo58luR18jYgZP_cdXygXXYpnU2SOjls"
         }
       ],
       "services": {

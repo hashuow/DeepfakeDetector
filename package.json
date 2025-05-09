@@ -32,6 +32,7 @@
     "react-native-screens": "^4.9.2",
     "react-native-sound": "^0.11.2",
     "react-native-sqlite-storage": "^6.0.1",
+    "react-native-toast-message": "^2.3.0",
     "react-native-vector-icons": "^10.2.0",
     "react-native-video": "^6.13.0"
   },
