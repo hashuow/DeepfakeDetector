@@ -5,6 +5,7 @@ import { getApp } from '@react-native-firebase/app';
 import moment from 'moment';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Video from 'react-native-video';
+import { fetchAudioFiles } from '../../database/firestoreDB'; // Adjust the import path as necessary
 
 const HomeScreen = () => {
   const [audioList, setAudioList] = useState([]);
@@ -25,19 +26,20 @@ const HomeScreen = () => {
     }
 
     try {
-      const db = getFirestore(getApp());
-      const audioQuery = collection(db, 'voice_recordings');
-      const snapshot = await getDocs(audioQuery);
+      // const db = getFirestore(getApp());
+      // const audioQuery = collection(db, 'voice_recordings');
+      // const snapshot = await getDocs(audioQuery);
 
-      const list = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          from: data.from,
-          recordingUrl: data.recordingUrl,
-          timestamp: data.timestamp,
-        };
-      });
+      // const list = snapshot.docs.map(doc => {
+      //   const data = doc.data();
+      //   return {
+      //     id: doc.id,
+      //     from: data.from,
+      //     recordingUrl: data.recordingUrl,
+      //     timestamp: data.timestamp,
+      //   };
+      // });
+      const list = fetchAudioFiles(); // Replace with actual data fetching logic
 
       setAudioList(list);
     } catch (error) {

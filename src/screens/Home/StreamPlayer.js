@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  Alert,
 } from 'react-native';
 import Video from 'react-native-video';
 import Sound from 'react-native-sound';
+import RNFS from 'react-native-fs';
+import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
@@ -16,20 +19,18 @@ const StreamPlayer = ({ recordingUrl, from, onEnd }) => {
   const [callAccepted, setCallAccepted] = useState(false);
   const [paused, setPaused] = useState(true);
   const ringtoneRef = useRef(null);
+  const alarmRef = useRef(null);
 
   useEffect(() => {
     Sound.setCategory('Playback');
 
-    // 🔔 Play ringtone on mount
     ringtoneRef.current = new Sound('ringtone', Sound.MAIN_BUNDLE, (error) => {
-      if (error) {
-        console.error('❌ Failed to load ringtone:', error);
-        return;
+      if (!error) {
+        ringtoneRef.current.setNumberOfLoops(-1);
+        ringtoneRef.current.play();
+      } else {
+        console.error('🔇 Failed to load ringtone:', error);
       }
-      ringtoneRef.current.setNumberOfLoops(-1); // loop
-      ringtoneRef.current.play((success) => {
-        if (!success) console.error('🔇 Ringtone failed');
-      });
     });
 
     return () => stopRingtone();
@@ -43,22 +44,81 @@ const StreamPlayer = ({ recordingUrl, from, onEnd }) => {
     }
   };
 
-  const handleAccept = () => {
+  const playAlarm = () => {
+    alarmRef.current = new Sound('alarm', Sound.MAIN_BUNDLE, (error) => {
+      if (!error) {
+        alarmRef.current.play((success) => {
+          if (!success) {
+            console.error('🔇 Alarm playback failed');
+          }
+          alarmRef.current.release();
+        });
+      } else {
+        console.error('❌ Failed to load alarm sound:', error);
+      }
+    });
+  };
+
+  const handleAccept = async () => {
     stopRingtone();
     setCallAccepted(true);
     setPaused(false);
+
+    try {
+      // 1. Download the mp3 to local filesystem
+      const localPath = `${RNFS.DocumentDirectoryPath}/call_${Date.now()}.mp3`;
+      const downloadResult = await RNFS.downloadFile({
+        fromUrl: recordingUrl,
+        toFile: localPath,
+      }).promise;
+
+      if (downloadResult.statusCode !== 200) {
+        console.error('❌ Failed to download audio');
+        return;
+      }
+
+      console.log('📥 Audio downloaded to:', localPath);
+
+      // 2. Prepare form data
+      const formData = new FormData();
+      formData.append('audio', {
+        uri: 'file://' + localPath,
+        type: 'audio/mpeg',
+        name: 'call_audio.mp3',
+      });
+
+      // 3. Send to prediction API
+      const response = await axios.post('http://10.0.2.2:8000/predict/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Accept: 'application/json',
+        },
+      });
+
+      console.log('🔍 Prediction response:', response.data);
+
+      if (response.data.real === false) {
+        playAlarm();
+        Alert.alert('🚨 Fake Call Detected', 'This appears to be a spoofed voice.');
+        setPaused(true);
+        onEnd();
+      }
+    } catch (error) {
+      console.error('❌ Error calling prediction API:', error.message);
+    }
   };
 
   const handleReject = () => {
     stopRingtone();
     setPaused(true);
     setCallAccepted(false);
-    onEnd(); // close player
+    onEnd();
   };
 
   return (
     <View style={styles.fullscreen}>
       <StatusBar hidden={true} />
+
       {!callAccepted ? (
         <>
           <Text style={styles.incomingText}>📞 Incoming Call</Text>

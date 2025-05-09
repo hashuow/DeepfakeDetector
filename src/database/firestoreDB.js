@@ -45,3 +45,44 @@ export const loginUser = async (username) => {
     throw error;
   }
 };
+
+export const fetchAudioFiles = async () => {
+  try {
+    const db = getFirestore(getApp());
+    const audioQuery = collection(db, 'voice_recordings');
+    const snapshot = await getDocs(audioQuery);
+
+    const list = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        from: data.from,
+        recordingUrl: data.recordingUrl,
+        timestamp: data.timestamp,
+      };
+    });
+
+    return list;
+  } catch (error) {
+    console.error('Error fetching audio files:', error.message);
+    throw error;
+  }
+}
+export const insertAudioFile = async (audioFile) => {
+  try {
+    const db = getFirestore(getApp());
+
+    const docRef = await addDoc(collection(db, "voice_recordings"), {
+      from: audioFile.from,
+      recordingUrl: audioFile.recordingUrl,
+      timestamp: audioFile.timestamp,
+    });
+
+    console.log("Audio file inserted with ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error inserting audio file:", error);
+    throw error;
+  }
+};
+
