@@ -1,18 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  RefreshControl,
-  ToastAndroid,
-  Platform,
+  View, Text, FlatList, TouchableOpacity,
+  ActivityIndicator, StyleSheet, RefreshControl, ToastAndroid, Platform
 } from 'react-native';
 import moment from 'moment';
 import Video from 'react-native-video';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Menu, Divider, Button, Provider as PaperProvider } from 'react-native-paper';
 import { fetchAudioFilesFromDB } from '../../database/firestoreDB';
 import { AuthContext } from '../../navigation/AppNavigator';
 
@@ -22,46 +16,61 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [currentAudioUrl, setCurrentAudioUrl] = useState(null);
   const [paused, setPaused] = useState(true);
+  const [activePlayingId, setActivePlayingId] = useState(null);
+
+  const [filterFrom, setFilterFrom] = useState('all');
+  const [filterPrediction, setFilterPrediction] = useState('all');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [menuVisible, setMenuVisible] = useState({ from: false, prediction: false, sort: false });
 
   const { username } = useContext(AuthContext);
 
   useEffect(() => {
-    console.log("📌 Logged in as:", username);
     fetchAudioFiles();
   }, []);
 
   const fetchAudioFiles = async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
+    isRefresh ? setRefreshing(true) : setLoading(true);
     try {
       const list = await fetchAudioFilesFromDB(username);
       setAudioList(list);
-
-      if (isRefresh) {
-        console.log("🔄 Audio list refreshed.");
-        if (Platform.OS === 'android') {
-          ToastAndroid.show("✅ Refreshed", ToastAndroid.SHORT);
-        }
+      if (isRefresh && Platform.OS === 'android') {
+        ToastAndroid.show('✅ Refreshed', ToastAndroid.SHORT);
       }
     } catch (error) {
-      console.error('Error fetching audio files:', error.message);
+      console.error('Fetch Error:', error.message);
     } finally {
       isRefresh ? setRefreshing(false) : setLoading(false);
     }
   };
 
-  const handlePlayPause = (audioUrl) => {
-    if (currentAudioUrl === audioUrl) {
+  const handlePlayPause = (id, audioUrl) => {
+    if (activePlayingId === id && currentAudioUrl === audioUrl) {
       setPaused(!paused);
     } else {
-      setCurrentAudioUrl(audioUrl);
-      setPaused(false);
+      setPaused(true);
+      setCurrentAudioUrl(null);
+      setTimeout(() => {
+        setCurrentAudioUrl(audioUrl);
+        setPaused(false);
+        setActivePlayingId(id);
+      }, 100);
     }
   };
+
+  const applyFilters = () => {
+    let filtered = [...audioList];
+    if (filterFrom !== 'all') filtered = filtered.filter(item => item.from === filterFrom);
+    if (filterPrediction !== 'all') filtered = filtered.filter(item => item.prediction === filterPrediction);
+    return filtered.sort((a, b) => {
+      const t1 = a.timestamp?.toDate?.() ?? a.timestamp;
+      const t2 = b.timestamp?.toDate?.() ?? b.timestamp;
+      return sortOrder === 'desc' ? t2 - t1 : t1 - t2;
+    });
+  };
+
+  const filteredList = applyFilters();
+  const allCallers = [...new Set(audioList.map(item => item.from))];
 
   if (loading) {
     return (
@@ -73,40 +82,71 @@ const HomeScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Incoming Voice Recordings</Text>
-      <Text style={styles.subtitle}>User: {username}</Text>
+    <PaperProvider>
+      <View style={styles.container}>
+        <View style={styles.filterBar}>
+          <Menu
+            visible={menuVisible.from}
+            onDismiss={() => setMenuVisible(p => ({ ...p, from: false }))}
+            anchor={
+              <Button mode="outlined" onPress={() => setMenuVisible(p => ({ ...p, from: true }))}>
+                {filterFrom === 'all' ? 'All Callers' : filterFrom}
+              </Button>
+            }>
+            <Menu.Item onPress={() => setFilterFrom('all')} title="All Callers" />
+            <Divider />
+            {allCallers.map(from => (
+              <Menu.Item key={from} onPress={() => setFilterFrom(from)} title={from} />
+            ))}
+          </Menu>
 
-      {audioList.length === 0 ? (
-        <Text>No audio recordings found.</Text>
-      ) : (
+          <Menu
+            visible={menuVisible.prediction}
+            onDismiss={() => setMenuVisible(p => ({ ...p, prediction: false }))}
+            anchor={
+              <Button mode="outlined" onPress={() => setMenuVisible(p => ({ ...p, prediction: true }))}>
+                {filterPrediction === 'all' ? 'All' : filterPrediction === 'fake' ? 'Fake' : 'Real'}
+              </Button>
+            }>
+            <Menu.Item onPress={() => setFilterPrediction('all')} title="All" />
+            <Menu.Item onPress={() => setFilterPrediction('real')} title="Real" />
+            <Menu.Item onPress={() => setFilterPrediction('fake')} title="Fake" />
+          </Menu>
+
+          <Menu
+            visible={menuVisible.sort}
+            onDismiss={() => setMenuVisible(p => ({ ...p, sort: false }))}
+            anchor={
+              <Button mode="outlined" onPress={() => setMenuVisible(p => ({ ...p, sort: true }))}>
+                {sortOrder === 'desc' ? 'Latest' : 'Oldest'}
+              </Button>
+            }>
+            <Menu.Item onPress={() => setSortOrder('desc')} title="Latest First" />
+            <Menu.Item onPress={() => setSortOrder('asc')} title="Oldest First" />
+          </Menu>
+        </View>
+
         <FlatList
-          data={audioList}
+          data={filteredList}
           keyExtractor={(item) => item.id}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => {
-                console.log("🔁 Pull-to-refresh triggered");
-                fetchAudioFiles(true);
-              }}
+              onRefresh={() => fetchAudioFiles(true)}
               colors={['#4CAF50']}
             />
           }
-          contentContainerStyle={{ flexGrow: 1 }}
           renderItem={({ item }) => {
-            const isPlaying = item.recordingUrl === currentAudioUrl && !paused;
+            const isPlaying = activePlayingId === item.id && currentAudioUrl === item.recordingUrl && !paused;
             const isFake = item.prediction === 'fake';
+            const time = item.timestamp?.toDate?.() ?? item.timestamp;
+            const displayTime = moment(time).format('DD MMM YYYY, hh:mm A');
 
             return (
               <View style={styles.card}>
                 <View style={styles.cardContent}>
                   <Text style={styles.fileName}>From: {item.from}</Text>
-                  <Text style={styles.detail}>
-                    Received: {item.timestamp
-                      ? moment(item.timestamp).format('DD MMM YYYY, hh:mm A')
-                      : 'Unknown'}
-                  </Text>
+                  <Text style={styles.detail}>Received: {displayTime}</Text>
                   <View style={styles.predictionRow}>
                     <Icon
                       name={isFake ? 'alert-octagon-outline' : 'shield-check-outline'}
@@ -120,37 +160,34 @@ const HomeScreen = () => {
                   </View>
                 </View>
                 <TouchableOpacity
-                  style={[
-                    styles.playButton,
-                    { backgroundColor: isPlaying ? '#f44336' : '#4CAF50' }
-                  ]}
-                  onPress={() => handlePlayPause(item.recordingUrl)}
+                  style={[styles.playButton, { backgroundColor: isPlaying ? '#f44336' : '#4CAF50' }]}
+                  onPress={() => handlePlayPause(item.id, item.recordingUrl)}
                 >
-                  <Text style={styles.playButtonText}>
-                    {isPlaying ? 'Pause' : 'Play'}
-                  </Text>
+                  <Text style={styles.playButtonText}>{isPlaying ? 'Pause' : 'Play'}</Text>
                 </TouchableOpacity>
               </View>
             );
           }}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
-      )}
 
-      {currentAudioUrl && (
-        <Video
-          source={{ uri: currentAudioUrl }}
-          paused={paused}
-          audioOnly={true}
-          onEnd={() => {
-            setCurrentAudioUrl(null);
-            setPaused(true);
-          }}
-          onError={(e) => console.error('Audio playback error:', e)}
-          style={{ height: 0, width: 0 }}
-        />
-      )}
-    </View>
+        {currentAudioUrl && (
+          <Video
+            key={activePlayingId}
+            source={{ uri: currentAudioUrl }}
+            paused={paused}
+            audioOnly
+            onEnd={() => {
+              setCurrentAudioUrl(null);
+              setPaused(true);
+              setActivePlayingId(null);
+            }}
+            onError={(e) => console.error('Audio error:', e)}
+            style={{ height: 0, width: 0 }}
+          />
+        )}
+      </View>
+    </PaperProvider>
   );
 };
 
@@ -159,23 +196,19 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 12,
     backgroundColor: '#ffffff',
+  },
+  filterBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 6,
   },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 12,
   },
   card: {
     flexDirection: 'row',
@@ -196,12 +229,11 @@ const styles = StyleSheet.create({
   detail: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 2,
   },
   predictionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 6,
   },
   playButton: {
     paddingVertical: 8,
@@ -210,11 +242,10 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   playButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
+    color: '#fff',
     fontWeight: 'bold',
   },
   separator: {
-    height: 14,
+    height: 10,
   },
 });
