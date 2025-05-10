@@ -1,11 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
-import { getFirestore, collection, getDocs } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
+import React, { useEffect, useState, useContext } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  RefreshControl,
+  ToastAndroid,
+  Platform,
+} from 'react-native';
 import moment from 'moment';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Video from 'react-native-video';
-import { fetchAudioFiles } from '../../database/firestoreDB'; // Adjust the import path as necessary
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { fetchAudioFilesFromDB } from '../../database/firestoreDB';
+import { AuthContext } from '../../navigation/AppNavigator';
 
 const HomeScreen = () => {
   const [audioList, setAudioList] = useState([]);
@@ -14,7 +23,10 @@ const HomeScreen = () => {
   const [currentAudioUrl, setCurrentAudioUrl] = useState(null);
   const [paused, setPaused] = useState(true);
 
+  const { username } = useContext(AuthContext);
+
   useEffect(() => {
+    console.log("📌 Logged in as:", username);
     fetchAudioFiles();
   }, []);
 
@@ -26,22 +38,15 @@ const HomeScreen = () => {
     }
 
     try {
-      // const db = getFirestore(getApp());
-      // const audioQuery = collection(db, 'voice_recordings');
-      // const snapshot = await getDocs(audioQuery);
-
-      // const list = snapshot.docs.map(doc => {
-      //   const data = doc.data();
-      //   return {
-      //     id: doc.id,
-      //     from: data.from,
-      //     recordingUrl: data.recordingUrl,
-      //     timestamp: data.timestamp,
-      //   };
-      // });
-      const list = fetchAudioFiles(); // Replace with actual data fetching logic
-
+      const list = await fetchAudioFilesFromDB(username);
       setAudioList(list);
+
+      if (isRefresh) {
+        console.log("🔄 Audio list refreshed.");
+        if (Platform.OS === 'android') {
+          ToastAndroid.show("✅ Refreshed", ToastAndroid.SHORT);
+        }
+      }
     } catch (error) {
       console.error('Error fetching audio files:', error.message);
     } finally {
@@ -70,6 +75,7 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Incoming Voice Recordings</Text>
+      <Text style={styles.subtitle}>User: {username}</Text>
 
       {audioList.length === 0 ? (
         <Text>No audio recordings found.</Text>
@@ -80,12 +86,18 @@ const HomeScreen = () => {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => fetchAudioFiles(true)}
+              onRefresh={() => {
+                console.log("🔁 Pull-to-refresh triggered");
+                fetchAudioFiles(true);
+              }}
               colors={['#4CAF50']}
             />
           }
+          contentContainerStyle={{ flexGrow: 1 }}
           renderItem={({ item }) => {
             const isPlaying = item.recordingUrl === currentAudioUrl && !paused;
+            const isFake = item.prediction === 'fake';
+
             return (
               <View style={styles.card}>
                 <View style={styles.cardContent}>
@@ -95,9 +107,23 @@ const HomeScreen = () => {
                       ? moment(item.timestamp).format('DD MMM YYYY, hh:mm A')
                       : 'Unknown'}
                   </Text>
+                  <View style={styles.predictionRow}>
+                    <Icon
+                      name={isFake ? 'alert-octagon-outline' : 'shield-check-outline'}
+                      size={18}
+                      color={isFake ? '#e53935' : '#4CAF50'}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={{ color: isFake ? '#e53935' : '#4CAF50', fontWeight: 'bold' }}>
+                      {isFake ? 'Fake Voice Detected' : 'Verified Voice'}
+                    </Text>
+                  </View>
                 </View>
                 <TouchableOpacity
-                  style={[styles.playButton, { backgroundColor: isPlaying ? '#f44336' : '#4CAF50' }]}
+                  style={[
+                    styles.playButton,
+                    { backgroundColor: isPlaying ? '#f44336' : '#4CAF50' }
+                  ]}
                   onPress={() => handlePlayPause(item.recordingUrl)}
                 >
                   <Text style={styles.playButtonText}>
@@ -144,7 +170,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 12,
   },
   card: {
     flexDirection: 'row',
@@ -166,6 +197,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 2,
+  },
+  predictionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
   playButton: {
     paddingVertical: 8,

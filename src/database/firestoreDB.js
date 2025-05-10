@@ -46,43 +46,48 @@ export const loginUser = async (username) => {
   }
 };
 
-export const fetchAudioFiles = async () => {
-  try {
-    const db = getFirestore(getApp());
-    const audioQuery = collection(db, 'voice_recordings');
-    const snapshot = await getDocs(audioQuery);
 
-    const list = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        from: data.from,
-        recordingUrl: data.recordingUrl,
-        timestamp: data.timestamp,
-      };
-    });
-
-    return list;
-  } catch (error) {
-    console.error('Error fetching audio files:', error.message);
-    throw error;
-  }
-}
-export const insertAudioFile = async (audioFile) => {
+export const insertAudioFile = async (audioFile, userId) => {
   try {
     const db = getFirestore(getApp());
 
-    const docRef = await addDoc(collection(db, "voice_recordings"), {
+    const docRef = await addDoc(collection(db, 'audio_files'), {
+      userId: audioFile.to,
       from: audioFile.from,
       recordingUrl: audioFile.recordingUrl,
-      timestamp: audioFile.timestamp,
+      timestamp: audioFile.timestamp || new Date(), 
+      prediction: audioFile.prediction// fallback if not provided
     });
 
-    console.log("Audio file inserted with ID:", docRef.id);
+    console.log('Audio file inserted with ID:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error("Error inserting audio file:", error);
+    console.error('Error inserting audio file:', error?.message || error);
     throw error;
   }
 };
 
+export const fetchAudioFilesFromDB = async (userId) => {
+  try {
+    console.log('Fetching audio files for user:', userId);
+    const db = getFirestore(getApp());
+      const audioQuery = query(
+        collection(db, 'audio_files'),
+        where('userId', '==', userId),
+      );
+
+      const snapshot = await getDocs(audioQuery);
+
+      console.log('Fetched docs:', snapshot.size);
+
+      const list = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+    return list;
+  } catch (error) {
+    console.error('Error fetching audio files:', error?.message || error);
+    throw error;
+  }
+};

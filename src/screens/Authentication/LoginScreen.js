@@ -1,18 +1,29 @@
 import React, { useState, useContext } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, ImageBackground, Image, ActivityIndicator } from "react-native";
-import { loginUser } from "../../database/firestoreDB"; 
-import bcrypt from 'react-native-bcrypt';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthContext } from "../../navigation/AppNavigator"; // Import AuthContext
-import backgroundImage from "../../../assets/background.png"; // Background image
-import logoImage from "../../../assets/logo.jpg"; // Logo image
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  ImageBackground,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import { loginUser } from "../../database/firestoreDB";
+import bcrypt from "react-native-bcrypt";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AuthContext } from "../../navigation/AppNavigator";
+import backgroundImage from "../../../assets/background.png";
+import logoImage from "../../../assets/logo.jpg";
 
 const LoginScreen = ({ navigation }) => {
-  const [username, setUsername] = useState("");
+  const [username, setUsernameInput] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { setIsLoggedIn } = useContext(AuthContext);
+  // ✅ Get context functions
+  const { setIsLoggedIn, setUsername } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -20,23 +31,30 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true); // Start loading when login clicked
+    setLoading(true);
 
     try {
       const user = await loginUser(username);
       if (user && bcrypt.compareSync(password, user.password)) {
-        console.log("Returned user object", user);
+        console.log("✅ Returned user object:", user);
 
+        // ✅ Store in context
+        setUsername(username);
         setIsLoggedIn(true);
-        await AsyncStorage.setItem('isLoggedIn', 'true');
+
+        // ✅ Persist in AsyncStorage
+        await AsyncStorage.setItem("isLoggedIn", "true");
+        await AsyncStorage.setItem("username", username);
+
+        // ✅ Navigate to Home (no need to pass username — it's in context)
       } else {
         Alert.alert("Login Failed", "Invalid credentials!");
       }
     } catch (error) {
-      console.log(error);
+      console.log("❌ Login error:", error);
       Alert.alert("Login Failed", "Invalid credentials!");
     } finally {
-      setLoading(false); // Stop loading after login attempt
+      setLoading(false);
     }
   };
 
@@ -49,7 +67,7 @@ const LoginScreen = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Username"
-          onChangeText={setUsername}
+          onChangeText={setUsernameInput}
           value={username}
           editable={!loading}
         />
@@ -67,11 +85,14 @@ const LoginScreen = ({ navigation }) => {
             <Button title="Login" onPress={handleLogin} disabled={loading} />
           </View>
           <View style={styles.button}>
-            <Button title="Register" onPress={() => navigation.navigate("Register")} disabled={loading} />
+            <Button
+              title="Register"
+              onPress={() => navigation.navigate("Register")}
+              disabled={loading}
+            />
           </View>
         </View>
 
-        {/* Show Activity Indicator and Loading Text when loading */}
         {loading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#0000ff" />
@@ -83,6 +104,8 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
+export default LoginScreen;
+
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -90,7 +113,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
     margin: 20,
     padding: 20,
     borderRadius: 10,
@@ -137,5 +160,3 @@ const styles = StyleSheet.create({
     color: "#000",
   },
 });
-
-export default LoginScreen;

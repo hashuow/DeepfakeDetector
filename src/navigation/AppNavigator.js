@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, { useState, useEffect, createContext } from "react";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
@@ -18,13 +18,11 @@ const Stack = createNativeStackNavigator();
 // 🔥 Auth Context
 const AuthContext = createContext();
 
-// ✅ Drawer Navigator (only Home + Logout after login)
+// ✅ Drawer Navigator (Home + Logout)
 const DrawerNavigator = () => (
   <Drawer.Navigator
     initialRouteName="Home"
-    screenOptions={{
-      headerShown: true,
-    }}
+    screenOptions={{ headerShown: true }}
   >
     <Drawer.Screen name="Home" component={HomeScreen} />
     <Drawer.Screen name="Logout" component={LogoutScreen} />
@@ -34,20 +32,23 @@ const DrawerNavigator = () => (
 // ✅ Main Navigator
 const AppNavigator = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
 
-  // Optional: Load from AsyncStorage to persist login
+  // ✅ Restore login state & username from AsyncStorage
   useEffect(() => {
     const loadLoginStatus = async () => {
       const storedStatus = await AsyncStorage.getItem('isLoggedIn');
+      const storedUsername = await AsyncStorage.getItem('username');
       if (storedStatus === 'true') {
         setIsLoggedIn(true);
+        setUsername(storedUsername || "");
       }
     };
     loadLoginStatus();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn }}>
+    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, username, setUsername }}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <NavigationContainer>
           {isLoggedIn ? (

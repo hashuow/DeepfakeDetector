@@ -6,7 +6,7 @@ import Sound from "react-native-sound";
 import RNFS from "react-native-fs";
 import StreamPlayer from "./src/screens/Home/StreamPlayer";
 
-const WS_URL = 'wss://6d97-2001-4479-407-a200-4b7-9d4a-b0cf-6e73.ngrok-free.app';
+const WS_URL = 'wss://c159-2001-4479-1801-a300-949-7d3a-25f6-65dd.ngrok-free.app';
 
 const App = () => {
   const ws = useRef<WebSocket | null>(null);
@@ -18,6 +18,8 @@ const App = () => {
   // Stream state
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const [caller, setCaller] = useState<string>(''); // For "from" number/name
+  const [to, setTo] = useState<string>(''); // For "to" number/name
+
 
   useEffect(() => {
     Sound.setCategory("Playback");
@@ -108,6 +110,7 @@ const App = () => {
         console.log("🎙️ Received recording URL:", message.url);
         setRecordingUrl(message.url);
         setCaller(message.from || 'Unknown'); // Show caller name/number
+        setTo(message.to || 'Unknown'); // Show recipient name/number
       }
 
       if (message.type === "end_stream") {
@@ -165,6 +168,7 @@ const App = () => {
         <StreamPlayer
           recordingUrl={recordingUrl}
           from={caller}
+          to={to}
           onEnd={() => {
             setRecordingUrl(null);
             setCaller('');
