@@ -11,6 +11,7 @@ import LoginScreen from "../screens/Authentication/LoginScreen";
 import HomeScreen from "../screens/Home/HomeScreen";
 import LogoutScreen from "../screens/Authentication/LogoutScreen";
 import PhoneCallScreen from "../screens/Deepfake/PhoneCallScreen";
+import CallInsightsScreen from "../screens/Home/CallInsightsScreen";
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
@@ -21,10 +22,11 @@ const AuthContext = createContext();
 // ✅ Drawer Navigator (Home + Logout)
 const DrawerNavigator = () => (
   <Drawer.Navigator
-    initialRouteName="Home"
+    initialRouteName="Call Insight"
     screenOptions={{ headerShown: true }}
   >
-    <Drawer.Screen name="Home" component={HomeScreen} />
+    <Drawer.Screen name="Call Insight" component={CallInsightsScreen} />
+    <Drawer.Screen name="Call History" component={HomeScreen} />
     <Drawer.Screen name="Logout" component={LogoutScreen} />
   </Drawer.Navigator>
 );
