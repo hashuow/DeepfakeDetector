@@ -12,6 +12,7 @@ import HomeScreen from "../screens/Home/HomeScreen";
 import LogoutScreen from "../screens/Authentication/LogoutScreen";
 import PhoneCallScreen from "../screens/Deepfake/PhoneCallScreen";
 import CallInsightsScreen from "../screens/Home/CallInsightsScreen";
+import ProfileScreen from "../screens/Home/ProfileScreen";
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
@@ -27,6 +28,7 @@ const DrawerNavigator = () => (
   >
     <Drawer.Screen name="Call Insight" component={CallInsightsScreen} />
     <Drawer.Screen name="Call History" component={HomeScreen} />
+    <Drawer.Screen name="Profile Settings" component={ProfileScreen} />
     <Drawer.Screen name="Logout" component={LogoutScreen} />
   </Drawer.Navigator>
 );

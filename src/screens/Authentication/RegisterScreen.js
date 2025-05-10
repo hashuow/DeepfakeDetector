@@ -1,8 +1,18 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, ImageBackground, Image } from "react-native";
-import User from "../../model/User"; // Import User model
-import { insertUser } from "../../database/firestoreDB"; // Import DB query function
-import bcrypt from 'react-native-bcrypt';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  ImageBackground,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import User from "../../model/User";
+import { insertUser } from "../../database/firestoreDB";
+import bcrypt from "react-native-bcrypt";
 import backgroundImage from "../../../assets/background.png";
 import logoImage from "../../../assets/logo.jpg";
 
@@ -15,6 +25,7 @@ const RegisterScreen = ({ navigation }) => {
     password: "",
     phone: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field, value) => {
     setUserDetails({ ...userDetails, [field]: value });
@@ -33,13 +44,13 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    // Validating User email address
     if (!userDetails.email.includes("@")) {
       Alert.alert("Error", "Please enter a valid email address!");
       return;
     }
 
-    // Hashing password via bcrypt.js
+    setLoading(true);
+
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(userDetails.password, salt);
 
@@ -51,7 +62,6 @@ const RegisterScreen = ({ navigation }) => {
       hashedPassword,
       parseInt(userDetails.phone, 10)
     );
-
 
     try {
       await insertUser(newUser);
@@ -65,15 +75,14 @@ const RegisterScreen = ({ navigation }) => {
         phone: "",
       });
 
-      // Corrected navigation
-      if (navigation.canGoBack()) {
-        navigation.goBack();
-      } else {
-        navigation.navigate("Login");
-      }
+      navigation.canGoBack()
+        ? navigation.goBack()
+        : navigation.navigate("Login");
     } catch (error) {
-      Alert.alert("Error", "User registration failed. Email or phone may already exist.");
-      console.error("Error inserting user:", error);
+      Alert.alert("Error", "Registration failed. Username may already exist.");
+      console.error("Insert Error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,18 +97,21 @@ const RegisterScreen = ({ navigation }) => {
           placeholder="First Name"
           onChangeText={(text) => handleInputChange("firstName", text)}
           value={userDetails.firstName}
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
           placeholder="Last Name"
           onChangeText={(text) => handleInputChange("lastName", text)}
           value={userDetails.lastName}
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
           placeholder="Username"
           onChangeText={(text) => handleInputChange("username", text)}
           value={userDetails.username}
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
@@ -107,6 +119,7 @@ const RegisterScreen = ({ navigation }) => {
           keyboardType="email-address"
           onChangeText={(text) => handleInputChange("email", text)}
           value={userDetails.email}
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
@@ -114,6 +127,7 @@ const RegisterScreen = ({ navigation }) => {
           secureTextEntry
           onChangeText={(text) => handleInputChange("password", text)}
           value={userDetails.password}
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
@@ -121,21 +135,30 @@ const RegisterScreen = ({ navigation }) => {
           keyboardType="numeric"
           onChangeText={(text) => handleInputChange("phone", text)}
           value={userDetails.phone}
+          editable={!loading}
         />
 
-        {/* Buttons in a row */}
         <View style={styles.buttonContainer}>
           <View style={styles.button}>
-            <Button title="Register" onPress={handleRegister} />
+            <Button title="Register" onPress={handleRegister} disabled={loading} />
           </View>
           <View style={styles.button}>
-            <Button title="Go to Login" onPress={() => navigation.navigate("Login")} />
+            <Button title="Go to Login" onPress={() => navigation.navigate("Login")} disabled={loading} />
           </View>
         </View>
+
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#0000ff" />
+            <Text style={styles.loadingText}>Registering, please wait...</Text>
+          </View>
+        )}
       </View>
     </ImageBackground>
   );
 };
+
+export default RegisterScreen;
 
 const styles = StyleSheet.create({
   background: {
@@ -144,11 +167,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
     margin: 20,
     padding: 20,
     borderRadius: 10,
     elevation: 5,
+    position: "relative",
   },
   logo: {
     width: 120,
@@ -179,6 +203,14 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
   },
+  loadingOverlay: {
+    marginTop: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#000",
+  },
 });
-
-export default RegisterScreen;
