@@ -6,7 +6,7 @@ import Sound from "react-native-sound";
 import RNFS from "react-native-fs";
 import StreamPlayer from "./src/screens/Home/StreamPlayer";
 
-const WS_URL = 'wss://c159-2001-4479-1801-a300-949-7d3a-25f6-65dd.ngrok-free.app';
+const WS_URL = 'wss://38cd-203-10-91-90.ngrok-free.app';
 
 const App = () => {
   const ws = useRef<WebSocket | null>(null);

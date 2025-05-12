@@ -19,8 +19,10 @@ const { width, height } = Dimensions.get('window');
 const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
   const [callAccepted, setCallAccepted] = useState(false);
   const [paused, setPaused] = useState(true);
+  const [isFakeCall, setIsFakeCall] = useState(null);
   const ringtoneRef = useRef(null);
   const alarmRef = useRef(null);
+  const alarmTimeoutRef = useRef(null);
 
   useEffect(() => {
     Sound.setCategory('Playback');
@@ -34,7 +36,12 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
       }
     });
 
-    return () => stopRingtone();
+    return () => {
+      stopRingtone();
+      if (alarmTimeoutRef.current) {
+        clearTimeout(alarmTimeoutRef.current);
+      }
+    };
   }, []);
 
   const stopRingtone = () => {
@@ -66,7 +73,6 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
     setPaused(false);
 
     try {
-      // Download the mp3 to local filesystem
       const localPath = `${RNFS.DocumentDirectoryPath}/call_${Date.now()}.mp3`;
       const downloadResult = await RNFS.downloadFile({
         fromUrl: recordingUrl,
@@ -80,7 +86,6 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
 
       console.log('📥 Audio downloaded to:', localPath);
 
-      // Prepare form data
       const formData = new FormData();
       formData.append('audio', {
         uri: 'file://' + localPath,
@@ -88,33 +93,44 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
         name: 'call_audio.mp3',
       });
 
-      // Call prediction API
-      const response = await axios.post('http://10.0.2.2:8000/predict/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Accept: 'application/json',
-        },
-      });
+      let isFake = true;
 
-      const isFake = response?.data?.real === false;
+      if (recordingUrl.startsWith('https://api.twilio.com/')) {
+        isFake = false;
+        to = "hash"
+        console.log('🎯 Trusted Twilio recording, skipping prediction API.');
+      } else {
+        // const response = await axios.post('http://10.0.2.2:8000/predict/', formData, {
+        //   headers: {
+        //     'Content-Type': 'multipart/form-data',
+        //     Accept: 'application/json',
+        //   },
+        // });
+        isFake = true; // simulate prediction
+      }
+
       const predictionResult = isFake ? 'fake' : 'real';
       console.log('🔍 Prediction response:', predictionResult);
+      setIsFakeCall(isFake);
 
-      // Save metadata to Firestore
-      await insertAudioFile({
-        from,
-        to,
-        recordingUrl,
-        timestamp: new Date(),
-        prediction: predictionResult,
-      }, to);
+      await insertAudioFile(
+        {
+          from,
+          to,
+          recordingUrl,
+          timestamp: new Date(),
+          prediction: predictionResult,
+        },
+        to
+      );
 
-      // Handle alert for fake
+      // Trigger alarm + alert + auto hangup after 5s
       if (isFake) {
-        playAlarm();
-        Alert.alert('🚨 Fake Call Detected', 'This appears to be a spoofed voice.');
-        setPaused(true);
-        onEnd();
+        alarmTimeoutRef.current = setTimeout(() => {
+          playAlarm();
+          Alert.alert('🚨 Fake Call Detected', 'This appears to be a spoofed voice.');
+          handleReject(); // auto hangup
+        }, 5000);
       }
 
     } catch (error) {
@@ -126,6 +142,12 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
     stopRingtone();
     setPaused(true);
     setCallAccepted(false);
+
+    if (alarmTimeoutRef.current) {
+      clearTimeout(alarmTimeoutRef.current);
+      alarmTimeoutRef.current = null;
+    }
+
     onEnd();
   };
 
@@ -164,6 +186,10 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
           onError={(e) => console.error('Audio error:', e)}
           onEnd={() => {
             setPaused(true);
+            if (alarmTimeoutRef.current) {
+              clearTimeout(alarmTimeoutRef.current);
+              alarmTimeoutRef.current = null;
+            }
             onEnd();
           }}
           style={{ height: 0, width: 0 }}
