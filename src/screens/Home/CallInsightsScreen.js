@@ -1,7 +1,16 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useContext, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  Alert,
+  RefreshControl,
+} from 'react-native';
 import { Card, Title, Paragraph, Avatar } from 'react-native-paper';
 import { PieChart } from 'react-native-chart-kit';
+import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../navigation/AppNavigator';
 import { fetchAudioFilesFromDB } from '../../database/firestoreDB';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -16,15 +25,17 @@ const CallInsightsScreen = () => {
     fake: 0,
     topCallers: [],
   });
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const loadSummary = async () => {
+  const loadSummary = async () => {
+    try {
+      setRefreshing(true);
       const data = await fetchAudioFilesFromDB(username);
-      const real = data.filter(i => i.prediction === 'real').length;
-      const fake = data.filter(i => i.prediction === 'fake').length;
+      const real = data.filter((i) => i.prediction === 'real').length;
+      const fake = data.filter((i) => i.prediction === 'fake').length;
 
-      const counts = {};
-      data.forEach(i => {
+      const counts: { [key: string]: number } = {};
+      data.forEach((i) => {
         counts[i.from] = (counts[i.from] || 0) + 1;
       });
 
@@ -39,10 +50,19 @@ const CallInsightsScreen = () => {
         fake,
         topCallers,
       });
-    };
+    } catch (err) {
+      Alert.alert('Error', 'Failed to load insights.');
+      console.error('🔥 Error loading summary:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-    loadSummary();
-  }, [username]);
+  useFocusEffect(
+    useCallback(() => {
+      loadSummary();
+    }, [username])
+  );
 
   const chartData = [
     {
@@ -62,7 +82,12 @@ const CallInsightsScreen = () => {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={loadSummary} />
+      }
+    >
       <Card style={styles.card}>
         <Card.Content>
           <Title>Total Calls</Title>
