@@ -2,6 +2,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
 
     <application
@@ -12,6 +13,9 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:supportsRtl="true">
+      <meta-data
+          android:name="com.google.android.geo.API_KEY"
+          android:value="AIzaSyD95Z-ByJpfUL0YT4R2zZC2xAn5JjRU_FE"/>
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

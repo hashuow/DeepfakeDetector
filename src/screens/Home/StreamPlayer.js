@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useContext,useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import Sound from 'react-native-sound';
 import RNFS from 'react-native-fs';
 import axios from 'axios';
 import { insertAudioFile } from '../../database/firestoreDB';
+import { AuthContext } from '../../navigation/AppNavigator';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,6 +24,7 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
   const ringtoneRef = useRef(null);
   const alarmRef = useRef(null);
   const alarmTimeoutRef = useRef(null);
+  // const { username } = useContext(AuthContext);
 
   useEffect(() => {
     Sound.setCategory('Playback');
