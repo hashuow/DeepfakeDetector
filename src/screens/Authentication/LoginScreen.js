@@ -22,7 +22,7 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Get context functions
+  // Get context functions
   const { setIsLoggedIn, setUsername } = useContext(AuthContext);
 
   const handleLogin = async () => {
@@ -36,22 +36,22 @@ const LoginScreen = ({ navigation }) => {
     try {
       const user = await loginUser(username);
       if (user && bcrypt.compareSync(password, user.password)) {
-        console.log("✅ Returned user object:", user);
+        console.log("Returned user object:", user);
 
-        // ✅ Store in context
+        //  Store in context
         setUsername(username);
         setIsLoggedIn(true);
 
-        // ✅ Persist in AsyncStorage
+        // Persist in AsyncStorage
         await AsyncStorage.setItem("isLoggedIn", "true");
         await AsyncStorage.setItem("username", username);
 
-        // ✅ Navigate to Home (no need to pass username — it's in context)
+        // Navigate to Home (no need to pass username — it's in context)
       } else {
         Alert.alert("Login Failed", "Invalid credentials!");
       }
     } catch (error) {
-      console.log("❌ Login error:", error);
+      console.log("Login error:", error);
       Alert.alert("Login Failed", "Invalid credentials!");
     } finally {
       setLoading(false);

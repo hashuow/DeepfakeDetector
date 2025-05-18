@@ -14,15 +14,14 @@ import {
 } from 'react-native';
 import { Avatar, Title, Paragraph } from 'react-native-paper';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'; // Ensure this is installed and linked
-import { AuthContext } from '../../navigation/AppNavigator'; // Adjust path if necessary
-import { fetchAudioFilesFromDB } from '../../database/firestoreDB'; // Adjust path if necessary
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Ensure this is installed and linked
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'; 
+import { AuthContext } from '../../navigation/AppNavigator'; 
+import { fetchAudioFilesFromDB } from '../../database/firestoreDB'; 
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 
 const screenWidth = Dimensions.get('window').width;
 const cardPadding = 16;
 
-// Color palette (as provided in your code)
 const ExampleInspiredColors = {
   background: '#F0F4F8',
   headerBackground: '#00AEEF',
@@ -221,8 +220,7 @@ const CallInsightsScreen = () => {
               initialRegion={AUSTRALIA_COORDS} // Default view region
               scrollEnabled={false} // Disable map interactions for overview
               zoomEnabled={false}
-              // pitchEnabled={false} // Consider disabling pitch for a flatter map
-              // rotateEnabled={false} // Consider disabling rotation
+
             >
               {/* Render markers on the map */}
               {demoMarkers.map((marker) => (

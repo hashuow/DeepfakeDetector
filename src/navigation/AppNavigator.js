@@ -17,10 +17,10 @@ import ProfileScreen from "../screens/Home/ProfileScreen";
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 
-// 🔥 Auth Context
+// Auth Context
 const AuthContext = createContext();
 
-// ✅ Drawer Navigator (Home + Logout)
+// Drawer Navigator (Home + Logout)
 const DrawerNavigator = () => (
   <Drawer.Navigator
     initialRouteName="Call Insight"
@@ -33,12 +33,12 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
-// ✅ Main Navigator
+// Main Navigator
 const AppNavigator = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
 
-  // ✅ Restore login state & username from AsyncStorage
+  // Restore login state & username from AsyncStorage
   useEffect(() => {
     const loadLoginStatus = async () => {
       const storedStatus = await AsyncStorage.getItem('isLoggedIn');

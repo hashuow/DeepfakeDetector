@@ -105,21 +105,6 @@ const ProfileSettingsScreen = () => {
 
       <Divider style={{ marginVertical: 16 }} />
 
-      {/* <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>Night Mode</Text>
-        <Switch value={nightMode} onValueChange={setNightMode} />
-      </View>
-      <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>Twitter</Text>
-        <Switch value={twitterEnabled} onValueChange={setTwitterEnabled} />
-      </View>
-      <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>Notifications</Text>
-        <Switch
-          value={notificationsEnabled}
-          onValueChange={setNotificationsEnabled}
-        />
-      </View> */}
 
       <View style={styles.buttonRow}>
         <Button

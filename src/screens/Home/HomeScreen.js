@@ -11,7 +11,7 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 import { fetchAudioFilesFromDB } from '../../database/firestoreDB';
 import { AuthContext } from '../../navigation/AppNavigator';
 
-// iOS-Style Color Palette
+
 const IOSColors = {
   background: '#F2F2F7',
   listItemBackground: '#FFFFFF',
@@ -68,52 +68,38 @@ const HomeScreen = () => {
         if (newFilter !== filterPrediction) { // Only update if it's different
             setFilterPrediction(newFilter);
         }
-        // Clear the param so it doesn't re-apply on every focus without a new navigation action
-        // This is generally a good practice for one-time actions based on params.
         navigation.setParams({ preFilter: undefined });
       }
-      // Initial fetch or re-fetch if needed (fetchAudioFiles might be called inside applyFilters or separately)
-      // If fetchAudioFiles doesn't depend on filterPrediction state directly for its call,
-      // and applyFilters is pure, the list will update correctly on re-render.
-      // The current structure where filteredList calls applyFilters() on each render is fine.
-    }, [route.params?.preFilter, navigation, filterPrediction]) // Dependencies for the effect
+      
+    }, [route.params?.preFilter, navigation, filterPrediction]) 
   );
 
 
   useEffect(() => {
-    // This effect will run on initial mount and whenever filterPrediction changes AFTER the focus effect.
-    // This ensures that if filterPrediction is set by navigation params, fetch is called with the new context.
-    // However, applyFilters is already called on every render, so an explicit fetch might only be for initial load
-    // or if the filtering logic itself requires a re-fetch (which it currently doesn't).
-    // For now, keep the initial fetch here. The focus effect handles updates from params.
+    
     if (loading) { // Only fetch initially if loading is true
         fetchAudioFiles();
     }
-  }, [loading]); // Simpler dependency for initial load
+  }, [loading]); 
 
-  // This effect ensures data is fetched when filterPrediction changes
-  // and it wasn't just an initial load controlled by the loading state.
-  // This might be redundant if applyFilters is sufficient, but can be useful
-  // if you want to explicitly re-fetch or do something else when filters change.
-  // For now, let's rely on applyFilters being called on re-render.
+  
 
   const fetchAudioFiles = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    // setLoading(true); // setLoading should ideally be true only for initial load or explicit full refresh
     try {
       console.log('[HomeScreen] Fetching audio files...');
       const list = await fetchAudioFilesFromDB(username);
       const updatedList = list.map(item => ({ ...item, location: item.location || 'Australia' }));
       setAudioList(updatedList);
       if (isRefresh && Platform.OS === 'android') {
-        ToastAndroid.show('✅ Refreshed', ToastAndroid.SHORT);
+        ToastAndroid.show('Refreshed', ToastAndroid.SHORT);
       }
     } catch (error) {
       console.error('[HomeScreen] Fetch Error:', error.message);
       ToastAndroid.show('Error fetching calls', ToastAndroid.SHORT)
     } finally {
       if (isRefresh) setRefreshing(false);
-      setLoading(false); // Ensure loading is set to false after fetch
+      setLoading(false); 
     }
   };
 
@@ -155,9 +141,9 @@ const HomeScreen = () => {
       const t2 = b.timestamp?.toDate?.() ?? new Date(b.timestamp);
       return sortOrder === 'desc' ? t2 - t1 : t1 - t2;
     });
-  }, [audioList, filterFrom, filterPrediction, sortOrder]); // Dependencies for applyFilters
+  }, [audioList, filterFrom, filterPrediction, sortOrder]); 
 
-  const filteredList = applyFilters(); // This will re-run whenever its dependencies change
+  const filteredList = applyFilters(); 
   const allCallers = ['all', ...new Set(audioList.map(item => item.from))];
 
   // Ensure button text updates when filterPrediction changes

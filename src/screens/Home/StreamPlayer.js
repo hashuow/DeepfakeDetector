@@ -34,7 +34,7 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
         ringtoneRef.current.setNumberOfLoops(-1);
         ringtoneRef.current.play();
       } else {
-        console.error('🔇 Failed to load ringtone:', error);
+        console.error('Failed to load ringtone:', error);
       }
     });
 
@@ -59,12 +59,12 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
       if (!error) {
         alarmRef.current.play((success) => {
           if (!success) {
-            console.error('🔇 Alarm playback failed');
+            console.error('Alarm playback failed');
           }
           alarmRef.current.release();
         });
       } else {
-        console.error('❌ Failed to load alarm sound:', error);
+        console.error(' Failed to load alarm sound:', error);
       }
     });
   };
@@ -82,11 +82,11 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
       }).promise;
 
       if (downloadResult.statusCode !== 200) {
-        console.error('❌ Failed to download audio');
+        console.error('Failed to download audio');
         return;
       }
 
-      console.log('📥 Audio downloaded to:', localPath);
+      console.log('Audio downloaded to:', localPath);
 
       const formData = new FormData();
       formData.append('audio', {
@@ -97,22 +97,19 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
 
       let isFake = true;
 
-      if (recordingUrl.startsWith('https://api.twilio.com/')) {
-        isFake = false;
-        to = "hash"
-        console.log('🎯 Trusted Twilio recording, skipping prediction API.');
-      } else {
-        // const response = await axios.post('http://10.0.2.2:8000/predict/', formData, {
-        //   headers: {
-        //     'Content-Type': 'multipart/form-data',
-        //     Accept: 'application/json',
-        //   },
-        // });
-        isFake = true; // simulate prediction
-      }
+     
+      const response = await axios.post('http://10.0.2.2:8000/predict/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Accept: 'application/json',
+        },
+      });
+      
 
-      const predictionResult = isFake ? 'fake' : 'real';
-      console.log('🔍 Prediction response:', predictionResult);
+      const predictionResult = response.data;
+      isFake = predictionResult.real;
+
+      console.log(' Prediction response:', predictionResult);
       setIsFakeCall(isFake);
 
       await insertAudioFile(
@@ -130,13 +127,13 @@ const StreamPlayer = ({ recordingUrl, from, to, onEnd }) => {
       if (isFake) {
         alarmTimeoutRef.current = setTimeout(() => {
           playAlarm();
-          Alert.alert('🚨 Fake Call Detected', 'This appears to be a spoofed voice.');
+          Alert.alert('Fake Call Detected', 'This appears to be a spoofed voice.');
           handleReject(); // auto hangup
         }, 5000);
       }
 
     } catch (error) {
-      console.error('❌ Error in handleAccept:', error.message);
+      console.error('Error in handleAccept:', error.message);
     }
   };
 

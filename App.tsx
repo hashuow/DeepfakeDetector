@@ -29,7 +29,7 @@ const App = () => {
       if (error) {
         console.error("Failed to load alarm sound", error);
       } else {
-        console.log("✅ Alarm sound loaded");
+        console.log("Alarm sound loaded");
       }
     });
 
@@ -63,11 +63,11 @@ const App = () => {
         console.log("FCM Token:", token);
 
         fcmUnsubscribe.current = messaging().onMessage(async (remoteMessage) => {
-          console.log("🔥 FCM Message:", remoteMessage);
+          console.log("FCM Message:", remoteMessage);
 
           if (remoteMessage.notification?.title === "Fake Voice Detected!") {
             alarmSound.current?.play((success) => {
-              if (!success) console.error("🔇 Alarm playback failed");
+              if (!success) console.error("Alarm playback failed");
             });
           }
 
@@ -77,10 +77,10 @@ const App = () => {
           );
         });
       } else {
-        console.log("❌ Notification permission denied.");
+        console.log("Notification permission denied.");
       }
     } catch (error) {
-      console.error("⚠️ FCM setup error:", error);
+      console.error("FCM setup error:", error);
     }
   };
 
@@ -88,7 +88,7 @@ const App = () => {
     ws.current = new WebSocket(WS_URL);
 
     ws.current.onopen = () => {
-      console.log("✅ WebSocket connected");
+      console.log("WebSocket connected");
       setConnected(true);
       ws.current?.send(JSON.stringify({ type: "client" }));
     };
@@ -97,17 +97,17 @@ const App = () => {
       const message = JSON.parse(event.data);
 
       if (message.type === "incoming_call") {
-        console.log("📞 Incoming Call:", message.from);
-        Alert.alert("📞 Incoming Call", `From: ${message.from}`);
+        console.log("Incoming Call:", message.from);
+        Alert.alert("Incoming Call", `From: ${message.from}`);
       }
 
       if (message.type === "audio") {
-        console.log("🎧 Audio received");
+        console.log("Audio received");
         await playBase64Audio(message.payload);
       }
 
       if (message.type === "recording") {
-        console.log("🎙️ Received recording URL:", message.url);
+        console.log("Received recording URL:", message.url);
         setRecordingUrl(message.url);
         setCaller(message.from || 'Unknown'); // Show caller name/number
         setTo(message.to || 'Unknown'); // Show recipient name/number
@@ -119,7 +119,7 @@ const App = () => {
     };
 
     ws.current.onerror = (e) => {
-      console.error("❌ WebSocket error:", e.message);
+      console.error("WebSocket error:", e.message);
     };
 
     ws.current.onclose = () => {
